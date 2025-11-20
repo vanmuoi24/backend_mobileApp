@@ -1,5 +1,6 @@
 package com.example.chart_backend.service;
 
+import com.example.chart_backend.dto.request.CreateParticipationRequest;
 import com.example.chart_backend.entity.Participation;
 import com.example.chart_backend.entity.User;
 import com.example.chart_backend.entity.Participation.InsuranceType;
@@ -13,57 +14,81 @@ import java.util.Optional;
 @Service
 public class ParticipationService {
 
-    @Autowired
-    private ParticipationRepository participationRepository;
+	@Autowired
+	private ParticipationRepository participationRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+	@Autowired
+	private UserRepository userRepository;
 
-    public List<Participation> getAllParticipations() {
-        return participationRepository.findAll();
-    }
+	public List<Participation> getAllParticipations() {
+		return participationRepository.findAll();
+	}
 
-    public Optional<Participation> getParticipationById(Long id) {
-        return participationRepository.findById(id);
-    }
+	public Optional<Participation> getParticipationById(Long id) {
+		return participationRepository.findById(id);
+	}
 
-    public Participation createParticipation(Participation participation) {
-        return participationRepository.save(participation);
-    }
+	public Participation createParticipation(CreateParticipationRequest request) {
+		if (request.getUserId() == null) {
+			throw new IllegalArgumentException("userId is required");
+		}
+		if (request.getInsuranceType() == null) {
+			throw new IllegalArgumentException("insuranceType is required");
+		}
 
-    public Participation updateParticipation(Long id, Participation updatedParticipation) {
-        return participationRepository.findById(id)
-                .map(participation -> {
-                    participation.setUser(updatedParticipation.getUser());
-                    participation.setInsuranceType(updatedParticipation.getInsuranceType());
-                    participation.setStartDate(updatedParticipation.getStartDate());
-                    participation.setEndDate(updatedParticipation.getEndDate());
-                    participation.setCompanyName(updatedParticipation.getCompanyName());
-                    participation.setWorkplaceAddress(updatedParticipation.getWorkplaceAddress());
-                    participation.setPosition(updatedParticipation.getPosition());
-                    participation.setCurrency(updatedParticipation.getCurrency());
-                    participation.setSalary(updatedParticipation.getSalary());
-                    participation.setInsuranceSalary(updatedParticipation.getInsuranceSalary());
-                    participation.setTotalTime(updatedParticipation.getTotalTime());
-                    participation.setDelayedTime(updatedParticipation.getDelayedTime());
-                    return participationRepository.save(participation);
-                })
-                .orElseThrow(() -> new RuntimeException("Participation not found with id " + id));
-    }
+		User user = userRepository.findById(request.getUserId())
+				.orElseThrow(() -> new IllegalArgumentException("User not found with id " + request.getUserId()));
 
-    public void deleteParticipation(Long id) {
-        participationRepository.deleteById(id);
-    }
+		Participation participation = new Participation();
+		participation.setUser(user);
+		participation.setInsuranceType(request.getInsuranceType());
+		participation.setStartDate(request.getStartDate());
+		participation.setEndDate(request.getEndDate());
+		participation.setCompanyName(request.getCompanyName());
+		participation.setWorkplaceAddress(request.getWorkplaceAddress());
+		participation.setPosition(request.getPosition());
+		participation.setCurrency(request.getCurrency());
+		participation.setSalary(request.getSalary());
+		participation.setInsuranceSalary(request.getInsuranceSalary());
+		participation.setTotalTime(request.getTotalTime());
+		participation.setDelayedTime(request.getDelayedTime());
 
-    public List<Participation> getParticipationsByUserId(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        return user.map(participationRepository::findByUser).orElse(List.of());
-    }
+		return participationRepository.save(participation);
+	}
 
-    // Lấy theo userId và InsuranceType
-    public List<Participation> getParticipationsByUserIdAndInsuranceType(Long userId, InsuranceType insuranceType) {
-        Optional<User> user = userRepository.findById(userId);
-        return user.map(u -> participationRepository.findByUserAndInsuranceType(u, insuranceType))
-                   .orElse(List.of());
-    }
+	public Participation updateParticipation(Long id, Participation updatedParticipation) {
+		return participationRepository.findById(id)
+				.map(participation -> {
+					participation.setUser(updatedParticipation.getUser());
+					participation.setInsuranceType(updatedParticipation.getInsuranceType());
+					participation.setStartDate(updatedParticipation.getStartDate());
+					participation.setEndDate(updatedParticipation.getEndDate());
+					participation.setCompanyName(updatedParticipation.getCompanyName());
+					participation.setWorkplaceAddress(updatedParticipation.getWorkplaceAddress());
+					participation.setPosition(updatedParticipation.getPosition());
+					participation.setCurrency(updatedParticipation.getCurrency());
+					participation.setSalary(updatedParticipation.getSalary());
+					participation.setInsuranceSalary(updatedParticipation.getInsuranceSalary());
+					participation.setTotalTime(updatedParticipation.getTotalTime());
+					participation.setDelayedTime(updatedParticipation.getDelayedTime());
+					return participationRepository.save(participation);
+				})
+				.orElseThrow(() -> new RuntimeException("Participation not found with id " + id));
+	}
+
+	public void deleteParticipation(Long id) {
+		participationRepository.deleteById(id);
+	}
+
+	public List<Participation> getParticipationsByUserId(Long userId) {
+		Optional<User> user = userRepository.findById(userId);
+		return user.map(participationRepository::findByUser).orElse(List.of());
+	}
+
+	// Lấy theo userId và InsuranceType
+	public List<Participation> getParticipationsByUserIdAndInsuranceType(Long userId, InsuranceType insuranceType) {
+		Optional<User> user = userRepository.findById(userId);
+		return user.map(u -> participationRepository.findByUserAndInsuranceType(u, insuranceType))
+				.orElse(List.of());
+	}
 }
