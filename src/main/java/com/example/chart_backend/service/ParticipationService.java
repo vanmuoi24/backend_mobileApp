@@ -1,6 +1,7 @@
 package com.example.chart_backend.service;
 
 import com.example.chart_backend.dto.request.CreateParticipationRequest;
+import com.example.chart_backend.dto.request.ParticipationRequest;
 import com.example.chart_backend.entity.Participation;
 import com.example.chart_backend.entity.User;
 import com.example.chart_backend.entity.Participation.InsuranceType;
@@ -8,6 +9,8 @@ import com.example.chart_backend.repository.ParticipationRepository;
 import com.example.chart_backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,25 +59,40 @@ public class ParticipationService {
 		return participationRepository.save(participation);
 	}
 
-	public Participation updateParticipation(Long id, Participation updatedParticipation) {
-		return participationRepository.findById(id)
-				.map(participation -> {
-					participation.setUser(updatedParticipation.getUser());
-					participation.setInsuranceType(updatedParticipation.getInsuranceType());
-					participation.setStartDate(updatedParticipation.getStartDate());
-					participation.setEndDate(updatedParticipation.getEndDate());
-					participation.setCompanyName(updatedParticipation.getCompanyName());
-					participation.setWorkplaceAddress(updatedParticipation.getWorkplaceAddress());
-					participation.setPosition(updatedParticipation.getPosition());
-					participation.setCurrency(updatedParticipation.getCurrency());
-					participation.setSalary(updatedParticipation.getSalary());
-					participation.setInsuranceSalary(updatedParticipation.getInsuranceSalary());
-					participation.setTotalTime(updatedParticipation.getTotalTime());
-					participation.setDelayedTime(updatedParticipation.getDelayedTime());
-					return participationRepository.save(participation);
-				})
-				.orElseThrow(() -> new RuntimeException("Participation not found with id " + id));
-	}
+	public Participation updateParticipation(Long id, ParticipationRequest req) {
+        Participation participation = participationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Participation not found with id " + id));
+
+        // Lấy User từ userId
+        User user = userRepository.findById(req.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id " + req.getUserId()));
+        participation.setUser(user);
+
+        // Map insuranceType (enum)
+        if (req.getInsuranceType() != null) {
+            participation.setInsuranceType(Participation.InsuranceType.valueOf(req.getInsuranceType()));
+        }
+
+        // Map các field còn lại
+        if (req.getStartDate() != null) {
+            participation.setStartDate(LocalDate.parse(req.getStartDate()));
+        }
+        if (req.getEndDate() != null) {
+            participation.setEndDate(LocalDate.parse(req.getEndDate()));
+        }
+
+        participation.setCompanyName(req.getCompanyName());
+        participation.setWorkplaceAddress(req.getWorkplaceAddress());
+        participation.setPosition(req.getPosition());
+        participation.setCurrency(req.getCurrency());
+        participation.setSalary(req.getSalary());
+        participation.setInsuranceSalary(req.getInsuranceSalary());
+        participation.setTotalTime(req.getTotalTime());
+        participation.setDelayedTime(req.getDelayedTime());
+
+        return participationRepository.save(participation);
+    }
+
 
 	public void deleteParticipation(Long id) {
 		participationRepository.deleteById(id);

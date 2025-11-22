@@ -1,7 +1,7 @@
 package com.example.chart_backend.controller;
 
-
 import com.example.chart_backend.dto.request.CreateParticipationRequest;
+import com.example.chart_backend.dto.request.ParticipationRequest;
 import com.example.chart_backend.entity.Participation;
 import com.example.chart_backend.service.ParticipationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,20 +33,18 @@ public class ParticipationController {
 	}
 
 	@PostMapping
-	public ResponseEntity<ApiResponse<Participation>> createParticipation(@RequestBody CreateParticipationRequest request) {
+	public ResponseEntity<ApiResponse<Participation>> createParticipation(
+			@RequestBody CreateParticipationRequest request) {
 		Participation created = participationService.createParticipation(request);
 		return ResponseEntity.ok(new ApiResponse<>(true, "Tạo Participation thành công", created));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<ApiResponse<Participation>> updateParticipation(@PathVariable Long id,
-			@RequestBody Participation participation) {
-		try {
-			Participation updated = participationService.updateParticipation(id, participation);
-			return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật Participation thành công", updated));
-		} catch (RuntimeException e) {
-			return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
-		}
+	public ResponseEntity<Participation> update(
+			@PathVariable Long id,
+			@RequestBody ParticipationRequest req) {
+		Participation updated = participationService.updateParticipation(id, req);
+		return ResponseEntity.ok(updated);
 	}
 
 	@DeleteMapping("/{id}")
