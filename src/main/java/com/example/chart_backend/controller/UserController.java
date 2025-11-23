@@ -58,28 +58,22 @@ public class UserController {
         return ResponseEntity.status(404).body(ApiResponse.error("Không tìm thấy người dùng để xóa"));
     }
 
-    
-@PostMapping("/{id}/avatar")
-public ResponseEntity<ApiResponse<User>> uploadAvatar(
-        @PathVariable Long id,
-        @RequestParam("avatar") MultipartFile avatarFile) {
+    @PostMapping("/{id}/avatar")
+    public ResponseEntity<ApiResponse<User>> uploadAvatar(
+            @PathVariable Long id,
+            @RequestParam("avatar") MultipartFile avatarFile) {
 
-    if (avatarFile.isEmpty()) {
-        return ResponseEntity.badRequest()
-                .body(ApiResponse.error("File avatar không được để trống"));
+        if (avatarFile.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("File avatar không được để trống"));
+        }
+
+        return userService.updateUserAvatar(id, avatarFile)
+                .map(updatedUser -> ResponseEntity.ok(
+                        ApiResponse.success("Cập nhật avatar thành công", updatedUser)))
+                .orElse(
+                        ResponseEntity.status(404)
+                                .body(ApiResponse.error("Không tìm thấy người dùng để cập nhật avatar")));
     }
-
-    return userService.updateUserAvatar(id, avatarFile)
-            .map(updatedUser ->
-                    ResponseEntity.ok(
-                            ApiResponse.success("Cập nhật avatar thành công", updatedUser)
-                    )
-            )
-            .orElse(
-                    ResponseEntity.status(404)
-                            .body(ApiResponse.error("Không tìm thấy người dùng để cập nhật avatar"))
-            );
-}
-
 
 }
