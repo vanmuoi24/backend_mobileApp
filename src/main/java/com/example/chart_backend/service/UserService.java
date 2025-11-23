@@ -1,9 +1,16 @@
 package com.example.chart_backend.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.chart_backend.dto.request.ResCreateUserDTO;
 import com.example.chart_backend.entity.User;
@@ -16,7 +23,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-
+    @Value("${avatar.upload-dir:uploads/avatars}")
+    private String avatarUploadDir;
     public User handleGetUserByUserNawm(String bhxh) {
         return this.userRepository.findByBhxhNumber(bhxh);
     }
@@ -99,6 +107,39 @@ public class UserService {
             userRepository.delete(user);
             return true;
         }).orElse(false);
+    }
+
+    public Optional<User> updateUserAvatar(Long id, MultipartFile file) {
+        return userRepository.findById(id).map(user -> {
+            try {
+                // Tạo folder nếu chưa có
+                Path uploadPath = Paths.get(avatarUploadDir).toAbsolutePath().normalize();
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+
+                // Tạo tên file unique
+                String originalFilename = file.getOriginalFilename();
+                String extension = "";
+                if (originalFilename != null && originalFilename.contains(".")) {
+                    extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                }
+                String fileName = UUID.randomUUID().toString() + extension;
+
+                // Lưu file
+                Path targetLocation = uploadPath.resolve(fileName);
+                Files.copy(file.getInputStream(), targetLocation);
+
+                // Tạo URL truy cập ảnh – tuỳ bạn muốn dạng gì
+                // Ví dụ dùng static resource: /uploads/avatars/xxx.jpg
+                String avatarUrl = "/uploads/avatars/" + fileName;
+
+                user.setAvatarUrl(avatarUrl);
+                return userRepository.save(user);
+            } catch (IOException e) {
+                throw new RuntimeException("Lỗi khi lưu file avatar", e);
+            }
+        });
     }
 
 }
