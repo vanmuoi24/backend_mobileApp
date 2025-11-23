@@ -112,13 +112,11 @@ public class UserService {
     public Optional<User> updateUserAvatar(Long id, MultipartFile file) {
         return userRepository.findById(id).map(user -> {
             try {
-                // Tạo folder nếu chưa có
-                Path uploadPath = Paths.get(avatarUploadDir).toAbsolutePath().normalize();
+                Path uploadPath = Paths.get("uploads/avatars").toAbsolutePath().normalize();
                 if (!Files.exists(uploadPath)) {
                     Files.createDirectories(uploadPath);
                 }
 
-                // Tạo tên file unique
                 String originalFilename = file.getOriginalFilename();
                 String extension = "";
                 if (originalFilename != null && originalFilename.contains(".")) {
@@ -126,15 +124,13 @@ public class UserService {
                 }
                 String fileName = UUID.randomUUID().toString() + extension;
 
-                // Lưu file
                 Path targetLocation = uploadPath.resolve(fileName);
                 Files.copy(file.getInputStream(), targetLocation);
 
-                // Tạo URL truy cập ảnh – tuỳ bạn muốn dạng gì
-                // Ví dụ dùng static resource: /uploads/avatars/xxx.jpg
+                // 👈 Quan trọng: Lưu đường dẫn ảnh để FE dùng
                 String avatarUrl = "/uploads/avatars/" + fileName;
-
                 user.setAvatarUrl(avatarUrl);
+
                 return userRepository.save(user);
             } catch (IOException e) {
                 throw new RuntimeException("Lỗi khi lưu file avatar", e);
