@@ -62,7 +62,7 @@ public class SecurityConfiguration {
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/test", "/api/v1/auth/login", "/api/v1/user", "/api/v1/auth/register")
+                        .requestMatchers("/test", "/api/v1/auth/login", "/api/v1/user", "/api/v1/auth/register","/api/v1/users/media/download/**")
                         .permitAll() // 🔹 Cho phép truy cập không cần xác thực
                         // .anyRequest().authenticated()
                         .requestMatchers("/api/v1/messages/**").authenticated()

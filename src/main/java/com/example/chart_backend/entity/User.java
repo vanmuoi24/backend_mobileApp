@@ -3,14 +3,18 @@ package com.example.chart_backend.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class User {
 
@@ -36,7 +40,10 @@ public class User {
   private String citizenId; // CCCD
   private LocalDate dateOfBirth; // Ngày sinh
   private String address; // Địa chỉ
-  private String avatarUrl; // Ảnh đại diện
+
+  // Avatar: liên kết tới FileMgmt qua cột avatar_file_id
+  @Column(name = "avatar_url")
+  private String avatarUrl;
 
   // ==== Thông tin thẻ BHYT ====
   private String cardNumber; // Mã thẻ
@@ -45,7 +52,8 @@ public class User {
   private String hospitalRegistered; // Nơi đăng ký khám chữa bệnh
   private String cardStatus; // ACTIVE / EXPIRED
 
-  // // Quan hệ 1-nhiều với Participation
-  // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+  // Nếu sau này dùng Participation thì bật lại:
+  // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval =
+  // true)
   // private List<Participation> participations;
 }

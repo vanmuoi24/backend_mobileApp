@@ -1,14 +1,19 @@
 package com.example.chart_backend.controller;
 
 import com.example.chart_backend.dto.response.ApiResponse;
+import com.example.chart_backend.dto.response.FileResponse;
 import com.example.chart_backend.entity.User;
 
 import com.example.chart_backend.service.UserService;
+import org.springframework.core.io.Resource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import org.springframework.http.HttpHeaders;
 import java.util.List;
 
 @RestController
@@ -58,22 +63,20 @@ public class UserController {
         return ResponseEntity.status(404).body(ApiResponse.error("Không tìm thấy người dùng để xóa"));
     }
 
-    @PostMapping("/{id}/avatar")
-    public ResponseEntity<ApiResponse<User>> uploadAvatar(
-            @PathVariable Long id,
-            @RequestParam("avatar") MultipartFile avatarFile) {
+    @PostMapping("/media/upload")
+    public ResponseEntity<ApiResponse<FileResponse>> uploadMedia(@RequestParam("file") MultipartFile file , 
+            @RequestParam("userId") String userId) throws IOException {
+        FileResponse fileResponse = userService.uploadAvatar(file , userId);
+        return ResponseEntity.ok(ApiResponse.success("Tải lên file thành công", fileResponse));
+    }
 
-        if (avatarFile.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("File avatar không được để trống"));
-        }
+    @GetMapping("/media/download/{fileName}")
+    ResponseEntity<Resource> downloadMedia(@PathVariable String fileName) throws IOException {
+        var fileData = userService.download(fileName);
 
-        return userService.updateUserAvatar(id, avatarFile)
-                .map(updatedUser -> ResponseEntity.ok(
-                        ApiResponse.success("Cập nhật avatar thành công", updatedUser)))
-                .orElse(
-                        ResponseEntity.status(404)
-                                .body(ApiResponse.error("Không tìm thấy người dùng để cập nhật avatar")));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, fileData.contentType())
+                .body(fileData.resource());
     }
 
 }

@@ -9,21 +9,27 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.chart_backend.dto.request.ResCreateUserDTO;
+import com.example.chart_backend.dto.response.FileData;
+import com.example.chart_backend.dto.response.FileResponse;
 import com.example.chart_backend.entity.User;
+import com.example.chart_backend.mapper.FileMgmtMapper;
 import com.example.chart_backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
-
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-    @Value("${avatar.upload-dir:uploads/avatars}")
+    private final com.example.chart_backend.repository.FileRepository fileRepository;
+    private final com.example.chart_backend.repository.FileMgmtRepository fileMgmtRepository;
+    private final FileMgmtMapper fileMgmtMapper;
+    @Value("${avatar.upload-dir}")
     private String avatarUploadDir;
     public User handleGetUserByUserNawm(String bhxh) {
         return this.userRepository.findByBhxhNumber(bhxh);
@@ -91,7 +97,6 @@ public class UserService {
             user.setCitizenId(userDetails.getCitizenId());
             user.setDateOfBirth(userDetails.getDateOfBirth());
             user.setAddress(userDetails.getAddress());
-            user.setAvatarUrl(userDetails.getAvatarUrl());
             user.setCardNumber(userDetails.getCardNumber());
             user.setCardIssuedDate(userDetails.getCardIssuedDate());
             user.setCardExpiryDate(userDetails.getCardExpiryDate());
@@ -109,33 +114,56 @@ public class UserService {
         }).orElse(false);
     }
 
-    public Optional<User> updateUserAvatar(Long id, MultipartFile file) {
-        return userRepository.findById(id).map(user -> {
-            try {
-                Path uploadPath = Paths.get("uploads/avatars").toAbsolutePath().normalize();
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
+    public FileResponse uploadAvatar(MultipartFile file, String userId) throws IOException {
+        // Nếu muốn lấy từ token thì dùng dòng này, khỏi cần truyền userId từ FE
+        // String userId =
+        // SecurityContextHolder.getContext().getAuthentication().getName();
 
-                String originalFilename = file.getOriginalFilename();
-                String extension = "";
-                if (originalFilename != null && originalFilename.contains(".")) {
-                    extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                }
-                String fileName = UUID.randomUUID().toString() + extension;
+        // 1. Lấy user
 
-                Path targetLocation = uploadPath.resolve(fileName);
-                Files.copy(file.getInputStream(), targetLocation);
 
-                // 👈 Quan trọng: Lưu đường dẫn ảnh để FE dùng
-                String avatarUrl = "/uploads/avatars/" + fileName;
-                user.setAvatarUrl(avatarUrl);
+        var user = userRepository.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-                return userRepository.save(user);
-            } catch (IOException e) {
-                throw new RuntimeException("Lỗi khi lưu file avatar", e);
-            }
-        });
+        // 2. Tìm avatar cũ của user (nếu có)
+        var oldFileOpt = fileMgmtRepository.findByOwnerId(userId);
+        if (oldFileOpt.isPresent()) {
+            var oldFile = oldFileOpt.get();
+
+            // 2.1. Xoá file cũ trên ổ cứng
+            fileRepository.delete(oldFile);
+
+            // 2.2. Xoá bản ghi cũ trong DB
+            fileMgmtRepository.delete(oldFile);
+        }
+
+        // 3. Lưu file mới vào ổ cứng
+        var fileInfo = fileRepository.store(file);
+
+        // 4. Lưu thông tin file vào bảng file_mgmt
+        var fileMgmt = fileMgmtMapper.toFileMgmt(fileInfo);
+        fileMgmt.setOwnerId(userId);
+        fileMgmt = fileMgmtRepository.save(fileMgmt);
+
+        // 5. Cập nhật avatarUrl cho user
+        user.setAvatarUrl(fileInfo.getUrl()); // nhớ thêm field này trong entity User
+        userRepository.save(user);
+
+        // 6. Trả response cho FE
+        return FileResponse.builder()
+                .originalFileName(file.getOriginalFilename())
+                .url(fileInfo.getUrl())
+                .build();
+    }
+
+    public FileData download(String fileName) throws IOException {
+        var optionalFileMgmt = fileMgmtRepository.findById(fileName);
+        if (optionalFileMgmt.isEmpty()) {
+            throw new IOException("File not found: " + fileName);
+        }
+        var fileMgmt = optionalFileMgmt.get();
+        var resource = fileRepository.read(fileMgmt);
+        return new FileData(fileMgmt.getContentType(), resource);
     }
 
 }
