@@ -29,8 +29,6 @@ public class UserService {
     private final com.example.chart_backend.repository.FileRepository fileRepository;
     private final com.example.chart_backend.repository.FileMgmtRepository fileMgmtRepository;
     private final FileMgmtMapper fileMgmtMapper;
-    @Value("${avatar.upload-dir}")
-    private String avatarUploadDir;
     public User handleGetUserByUserNawm(String bhxh) {
         return this.userRepository.findByBhxhNumber(bhxh);
     }
