@@ -20,5 +20,5 @@ public class FileMgmt {
     String contentType;
     long size;
     String md5Checksum;
-    String path;
+    String url;
 }

@@ -66,7 +66,7 @@ public class UserController {
     @PostMapping("/media/upload")
     public ResponseEntity<ApiResponse<FileResponse>> uploadMedia(@RequestParam("file") MultipartFile file , 
             @RequestParam("userId") String userId) throws IOException {
-        FileResponse fileResponse = userService.uploadAvatar(file , userId);
+        FileResponse fileResponse = userService.uploadFile(file , userId);
         return ResponseEntity.ok(ApiResponse.success("Tải lên file thành công", fileResponse));
     }
 

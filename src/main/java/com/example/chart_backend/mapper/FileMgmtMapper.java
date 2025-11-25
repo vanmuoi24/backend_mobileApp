@@ -16,7 +16,7 @@ public class FileMgmtMapper {
         file.setContentType(fileInfo.getContentType());
         file.setSize(fileInfo.getSize());
         file.setMd5Checksum(fileInfo.getMd5Checksum());
-        file.setPath(fileInfo.getPath());
+        file.setUrl(fileInfo.getPath());
 
         // ownerId set ở service (sau khi biết user hiện tại)
         return file;

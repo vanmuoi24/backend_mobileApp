@@ -114,56 +114,53 @@ public class UserService {
         }).orElse(false);
     }
 
-    public FileResponse uploadAvatar(MultipartFile file, String userId) throws IOException {
-        // Nếu muốn lấy từ token thì dùng dòng này, khỏi cần truyền userId từ FE
-        // String userId =
-        // SecurityContextHolder.getContext().getAuthentication().getName();
+    public FileResponse uploadFile(MultipartFile file, String userId) throws IOException {
+        // 1. Upload file lên Cloudinary
+        var fileInfo = fileRepository.store(file);
 
-        // 1. Lấy user
+        // 2. Map sang entity FileMgmt
+        var fileMgmt = fileMgmtMapper.toFileMgmt(fileInfo);
+        fileMgmt.setId(UUID.randomUUID().toString()); // primary key
+        fileMgmt.setOwnerId(userId); // nhớ kiểu cột là VARCHAR
 
-
+        // 3. Tìm user
         var user = userRepository.findById(Long.parseLong(userId))
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        // 2. Tìm avatar cũ của user (nếu có)
+        // 4. Nếu user đã có file cũ thì xoá
         var oldFileOpt = fileMgmtRepository.findByOwnerId(userId);
         if (oldFileOpt.isPresent()) {
             var oldFile = oldFileOpt.get();
 
-            // 2.1. Xoá file cũ trên ổ cứng
+            // 4.1. Xoá file cũ trên Cloudinary
             fileRepository.delete(oldFile);
 
-            // 2.2. Xoá bản ghi cũ trong DB
+            // 4.2. Xoá bản ghi cũ trong DB
             fileMgmtRepository.delete(oldFile);
         }
 
-        // 3. Lưu file mới vào ổ cứng
-        var fileInfo = fileRepository.store(file);
-
-        // 4. Lưu thông tin file vào bảng file_mgmt
-        var fileMgmt = fileMgmtMapper.toFileMgmt(fileInfo);
-        fileMgmt.setOwnerId(userId);
-        fileMgmt = fileMgmtRepository.save(fileMgmt);
-
-        // 5. Cập nhật avatarUrl cho user
-        user.setAvatarUrl(fileInfo.getUrl()); // nhớ thêm field này trong entity User
+        // 5. Cập nhật avatarUrl cho user = secure_url của Cloudinary
+        user.setAvatarUrl(fileInfo.getUrl()); // frontend dùng thẳng URL này để hiển thị ảnh
         userRepository.save(user);
 
-        // 6. Trả response cho FE
+        // 6. Lưu metadata file mới
+        fileMgmtRepository.save(fileMgmt);
+
+        // 7. Trả về cho FE
         return FileResponse.builder()
                 .originalFileName(file.getOriginalFilename())
-                .url(fileInfo.getUrl())
+                .url(fileInfo.getUrl()) // secure_url
                 .build();
     }
 
-    public FileData download(String fileName) throws IOException {
-        var optionalFileMgmt = fileMgmtRepository.findById(fileName);
+    public FileData download(String fileId) throws IOException {
+        var optionalFileMgmt = fileMgmtRepository.findById(fileId);
         if (optionalFileMgmt.isEmpty()) {
-            throw new IOException("File not found: " + fileName);
+            throw new IOException("File not found: " + fileId);
         }
         var fileMgmt = optionalFileMgmt.get();
         var resource = fileRepository.read(fileMgmt);
+
         return new FileData(fileMgmt.getContentType(), resource);
     }
-
 }
