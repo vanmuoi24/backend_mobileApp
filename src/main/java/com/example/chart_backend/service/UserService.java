@@ -89,8 +89,6 @@ public class UserService {
             user.setUserFullname(userDetails.getUserFullname());
             user.setUserEmail(userDetails.getUserEmail());
             user.setUserPhone(userDetails.getUserPhone());
-            user.setUserPassword(userDetails.getUserPassword());
-
             user.setBhxhNumber(userDetails.getBhxhNumber());
             user.setCitizenId(userDetails.getCitizenId());
             user.setDateOfBirth(userDetails.getDateOfBirth());
@@ -100,7 +98,6 @@ public class UserService {
             user.setCardExpiryDate(userDetails.getCardExpiryDate());
             user.setHospitalRegistered(userDetails.getHospitalRegistered());
             user.setCardStatus(userDetails.getCardStatus());
-
             return userRepository.save(user);
         });
     }

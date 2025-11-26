@@ -79,7 +79,6 @@ public class SecurityConfiguration {
                         .accessDeniedHandler(new BearerTokenAccessDeniedHandler())) // 403
                 .oauth2ResourceServer(aouth2 -> aouth2.jwt(Customizer.withDefaults()).authenticationEntryPoint(caep))
                 .formLogin(f -> f.disable()); // Tắt chức năng form login
-
         return http.build();
     }
 
