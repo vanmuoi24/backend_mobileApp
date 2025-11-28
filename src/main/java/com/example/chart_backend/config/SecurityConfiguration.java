@@ -73,11 +73,15 @@ public class SecurityConfiguration {
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/test", "/api/v1/auth/login", "/api/v1/user", "/api/v1/auth/register","/api/v1/users/media/download/**")
+                        .requestMatchers(
+                                "/test",
+                                "/api/v1/user",
+                                "/api/v1/auth/**",
+                                "/api/v1/users/media/download/**",
+                                "/ws/**"
+                        )
                         .permitAll() // 🔹 Cho phép truy cập không cần xác thực
-                        // .anyRequest().authenticated()
                         .requestMatchers("/api/v1/messages/**").authenticated()
-                        .requestMatchers("/ws/**").permitAll() // Thêm dòng này
                         .anyRequest()
                         .authenticated() // 🔹 Các request khác phải đăng nhập
                 )
