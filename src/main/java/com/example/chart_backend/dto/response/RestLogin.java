@@ -17,7 +17,6 @@ public class RestLogin {
     @NoArgsConstructor
     public static class UserLogin {
         private Long id;
-        private String email;
         private String name;
 
     }

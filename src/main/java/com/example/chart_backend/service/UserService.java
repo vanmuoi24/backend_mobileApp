@@ -70,7 +70,6 @@ public class UserService {
     public ResCreateUserDTO convertToResCreateUserDTO(User user) {
         ResCreateUserDTO resCreateUserDTO = new ResCreateUserDTO();
         resCreateUserDTO.setId(user.getId());
-        resCreateUserDTO.setUserEmail(user.getUserEmail());
         resCreateUserDTO.setUserFullname(user.getUserFullname());
         resCreateUserDTO.setUserPhone(user.getUserPhone());
         return resCreateUserDTO;
@@ -87,7 +86,7 @@ public class UserService {
     public Optional<User> updateUser(Long id, User userDetails) {
         return userRepository.findById(id).map(user -> {
             user.setUserFullname(userDetails.getUserFullname());
-            user.setUserEmail(userDetails.getUserEmail());
+
             user.setUserPhone(userDetails.getUserPhone());
             user.setBhxhNumber(userDetails.getBhxhNumber());
             user.setCitizenId(userDetails.getCitizenId());

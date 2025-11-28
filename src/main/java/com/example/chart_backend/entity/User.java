@@ -22,10 +22,6 @@ public class User {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  // ==== Thông tin đăng nhập ====
-  @Column(nullable = false, unique = true)
-  private String userEmail;
-
   @Column(nullable = false)
   private String userPassword;
 

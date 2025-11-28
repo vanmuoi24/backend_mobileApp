@@ -12,10 +12,4 @@ import com.example.chart_backend.entity.User;
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     User findByBhxhNumber(String bhxh);
 
-    boolean existsByUserEmail(String userEmail);
-
-    boolean existsByUserFullname(String userFullname);
-
-
-
 }

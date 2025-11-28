@@ -68,7 +68,7 @@ public class AuthController {
 
     RestLogin.UserLogin userLogin = new RestLogin.UserLogin(
       currentuserDb.getId(),
-      currentuserDb.getUserEmail(),
+
       currentuserDb.getUserFullname()
     );
     restLogin.setUser(userLogin);
@@ -113,9 +113,7 @@ public class AuthController {
       throw new IdInvalidException("Người dùng đã tồn tại trong hệ thống");
     }
 
-    String hassPassWord =
-      this.passwordEncoder.encode(bodyUser.getUserPassword());
-    bodyUser.setUserPassword(hassPassWord);
+
     User listUser = this.userService.createUser(bodyUser);
     return ResponseEntity
       .status(HttpStatus.CREATED)
