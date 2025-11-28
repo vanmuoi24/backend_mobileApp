@@ -18,6 +18,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -40,6 +41,7 @@ public class SecurityConfiguration {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+        final BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
         return new PasswordEncoder() {
             @Override
             public String encode(CharSequence rawPassword) {
@@ -50,7 +52,12 @@ public class SecurityConfiguration {
             public boolean matches(CharSequence rawPassword, String encodedPassword) {
                 if (rawPassword == null && encodedPassword == null) return true;
                 if (rawPassword == null || encodedPassword == null) return false;
-                return rawPassword.toString().equals(encodedPassword);
+                String raw = rawPassword.toString();
+                // Hỗ trợ tài khoản cũ (đã băm bcrypt) và tài khoản mới (plaintext)
+                if (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$")) {
+                    return bcrypt.matches(raw, encodedPassword);
+                }
+                return raw.equals(encodedPassword);
             }
         };
     }

@@ -28,6 +28,9 @@ public class User {
   @Column(length = 100)
   private String userFullname;
 
+  @Column(name = "user_email")
+  private String userEmail;
+
   @Column(length = 15)
   private String userPhone;
 

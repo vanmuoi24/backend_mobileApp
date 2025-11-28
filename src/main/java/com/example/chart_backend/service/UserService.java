@@ -1,15 +1,10 @@
 package com.example.chart_backend.service;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -64,6 +59,19 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        // DB hiện có cột user_email NOT NULL, tự sinh giá trị nội bộ để tránh lỗi
+        try {
+            var emailField = user.getClass().getDeclaredField("userEmail");
+            emailField.setAccessible(true);
+            Object val = emailField.get(user);
+            if (val == null || val.toString().isBlank()) {
+                String fallback = (user.getBhxhNumber() != null && !user.getBhxhNumber().isBlank())
+                        ? user.getBhxhNumber() + "@local"
+                        : "user@local";
+                emailField.set(user, fallback);
+            }
+        } catch (NoSuchFieldException | IllegalAccessException ignored) {
+        }
         return this.userRepository.save(user);
     }
 

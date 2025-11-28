@@ -8,7 +8,6 @@ import lombok.Setter;
 public class ResCreateUserDTO {
     private Long id;
     private String userFullname;
-    private String userEmail;
     private String userPhone;
 
 }
