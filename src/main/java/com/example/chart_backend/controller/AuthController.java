@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chart_backend.dto.request.LoginRequest;
 import com.example.chart_backend.dto.request.ResCreateUserDTO;
+import com.example.chart_backend.dto.request.RegisterRequest;
 import com.example.chart_backend.dto.response.RestLogin;
 import com.example.chart_backend.entity.User;
 import com.example.chart_backend.service.UserService;
@@ -105,7 +106,7 @@ public class AuthController {
  // register
   @PostMapping("/auth/register")
   public ResponseEntity<ResCreateUserDTO> userRegister(
-    @Valid @RequestBody User bodyUser
+    @Valid @RequestBody RegisterRequest bodyUser
   ) throws IdInvalidException {
     User currentDb =
       this.userService.handleGetUserByUserNawm(bodyUser.getBhxhNumber());
@@ -113,10 +114,27 @@ public class AuthController {
       throw new IdInvalidException("Người dùng đã tồn tại trong hệ thống");
     }
 
+    User newUser = new User();
+    newUser.setUserFullname(bodyUser.getUserFullname());
+    newUser.setUserPassword(bodyUser.getUserPassword());
+    newUser.setUserPhone(bodyUser.getUserPhone());
 
-    User listUser = this.userService.createUser(bodyUser);
+    newUser.setBhxhNumber(bodyUser.getBhxhNumber());
+    newUser.setCitizenId(bodyUser.getCitizenId());
+    newUser.setDateOfBirth(bodyUser.getDateOfBirth());
+    newUser.setAddress(bodyUser.getAddress());
+    newUser.setAvatarUrl(bodyUser.getAvatarUrl());
+
+    newUser.setCardNumber(bodyUser.getCardNumber());
+    newUser.setCardIssuedDate(bodyUser.getCardIssuedDate());
+    newUser.setCardExpiryDate(bodyUser.getCardExpiryDate());
+    newUser.setHospitalRegistered(bodyUser.getHospitalRegistered());
+    newUser.setCardStatus(bodyUser.getCardStatus());
+
+    User listUser = this.userService.createUser(newUser);
     return ResponseEntity
       .status(HttpStatus.CREATED)
       .body(this.userService.convertToResCreateUserDTO(listUser));
+      
   }
 }
