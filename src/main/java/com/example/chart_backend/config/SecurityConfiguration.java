@@ -1,11 +1,12 @@
 package com.example.chart_backend.config;
 
-
 import com.example.chart_backend.utils.SecurityUntil;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +21,6 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -30,6 +30,13 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
 import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
+
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfiguration;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -50,11 +57,15 @@ public class SecurityConfiguration {
 
             @Override
             public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                if (rawPassword == null && encodedPassword == null) return true;
-                if (rawPassword == null || encodedPassword == null) return false;
+                if (rawPassword == null && encodedPassword == null)
+                    return true;
+                if (rawPassword == null || encodedPassword == null)
+                    return false;
+
                 String raw = rawPassword.toString();
-                // Hỗ trợ tài khoản cũ (đã băm bcrypt) và tài khoản mới (plaintext)
-                if (encodedPassword.startsWith("$2a$") || encodedPassword.startsWith("$2b$") || encodedPassword.startsWith("$2y$")) {
+                if (encodedPassword.startsWith("$2a$") ||
+                        encodedPassword.startsWith("$2b$") ||
+                        encodedPassword.startsWith("$2y$")) {
                     return bcrypt.matches(raw, encodedPassword);
                 }
                 return raw.equals(encodedPassword);
@@ -76,31 +87,28 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             CustomAuthenticationEntryPoint caep) throws Exception {
+
         http
                 .csrf(c -> c.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(
                                 "/test",
-                                "/api/v1/user",
+                                "/api/v1/users",
                                 "/api/v1/auth/**",
                                 "/api/v1/users/media/download/**",
-                                "/ws/**"
-                        )
-                        .permitAll() // 🔹 Cho phép truy cập không cần xác thực
+                                "/ws/**")
+                        .permitAll()
                         .requestMatchers("/api/v1/messages/**").authenticated()
-                        .anyRequest()
-                        .authenticated() // 🔹 Các request khác phải đăng nhập
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 🔹 Không
-                                                                                                             // sử dụng
-                                                                                                             // session
-                )
+                        .anyRequest().authenticated())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()) // 401
-                        .accessDeniedHandler(new BearerTokenAccessDeniedHandler())) // 403
-                .oauth2ResourceServer(aouth2 -> aouth2.jwt(Customizer.withDefaults()).authenticationEntryPoint(caep))
-                .formLogin(f -> f.disable()); // Tắt chức năng form login
+                        .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
+                        .accessDeniedHandler(new BearerTokenAccessDeniedHandler()))
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults())
+                        .authenticationEntryPoint(caep))
+                .formLogin(f -> f.disable());
+
         return http.build();
     }
 
@@ -124,6 +132,7 @@ public class SecurityConfiguration {
                 .withSecretKey(getSecretKey())
                 .macAlgorithm(SecurityUntil.JWT_ALGORITHM)
                 .build();
+
         return token -> {
             try {
                 return jwtDecoder.decode(token);
@@ -139,10 +148,28 @@ public class SecurityConfiguration {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         grantedAuthoritiesConverter.setAuthorityPrefix("");
         grantedAuthoritiesConverter.setAuthoritiesClaimName("permission");
-        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
-                grantedAuthoritiesConverter);
 
-        return jwtAuthenticationConverter;
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+        return converter;
+    }
+
+    // 🔥🔥🔥 CORS CHUẨN CHO bhyt.online → api.bhyt.online
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(List.of(
+                "https://bhyt.online", // frontend chính
+                "http://localhost:5173" // dev local nếu cần
+        ));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

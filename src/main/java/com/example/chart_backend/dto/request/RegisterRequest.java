@@ -22,10 +22,8 @@ public class RegisterRequest {
     private String citizenId;
     private LocalDate dateOfBirth;
     private String address;
-
     @JsonAlias({"cardNumber", "card"})
     private String cardNumber;
-
     private LocalDate cardIssuedDate;
     private LocalDate cardExpiryDate;
     private String hospitalRegistered;
